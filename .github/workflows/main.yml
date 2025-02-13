@@ -23,10 +23,14 @@ jobs:
           sudo ufw allow 443/tcp
           sudo ufw allow 80/tcp
           sudo ufw reload
-        
-      - name: Install
+
+      - name: Install x-ui
         run: |
-          sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" <<< "y"
+          yes | sudo bash -c "$(curl -v -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" 2>&1 | tee install.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Installation failed!"
+            exit 1
+          fi
 
       - name: Start Service
         run: |
