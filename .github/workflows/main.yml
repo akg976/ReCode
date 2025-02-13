@@ -1,0 +1,48 @@
+name: Server Setup
+on:
+  workflow_dispatch:
+
+jobs:
+  x-ui-setup:
+    name: Install on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 1000
+
+    steps:
+      - name: Checkout Code (Optional)
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget
+
+      - name: Open Firewall Port (54321)
+        run: |
+          sudo ufw allow 54321/tcp
+          sudo ufw allow 443/tcp
+          sudo ufw allow 80/tcp
+          sudo ufw reload
+        
+      - name: Install
+        run: |
+          sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" <<< "y"
+
+      - name: Start Service
+        run: |
+          sudo systemctl start x-ui
+
+      - name: Check Status
+        run: |
+          if systemctl is-active --quiet x-ui; then
+            echo "✅ is running successfully."
+          else
+            echo "❌ failed to start. Check logs for details."
+            exit 1
+          fi
+
+      - name: Print Server IP and Port
+        run: |
+          echo "is running on:"
+          echo "IP: $(curl -s ifconfig.me)"
+          echo "Port: 54321"
