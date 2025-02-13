@@ -1,67 +1,71 @@
-name: Docker Setup
+name: Server Setup with Docker
 on:
   workflow_dispatch:
 
 jobs:
-  docker-setup:
-    name: Deploy with Docker
+  setup-code:
+    name: Install with Docker on Ubuntu
     runs-on: ubuntu-latest
     timeout-minutes: 1000
 
     steps:
-      - name: Prepare Workspace
-        run: |
-          mkdir -p x-ui/{db,cert} && cd x-ui
-          echo "Working directory: $PWD"
-
       - name: Install Docker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io
-          sudo systemctl enable --now docker
-          sudo usermod -aG docker $USER
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+          sudo systemctl start docker
+          sudo systemctl enable docker
 
       - name: Configure Firewall
         run: |
           sudo ufw allow 54321/tcp
           sudo ufw allow 443/tcp
           sudo ufw allow 80/tcp
-          sudo ufw --force enable
           sudo ufw reload
+
+      - name: Pull Docker Image
+        run: |
+          docker pull alireza0/x-ui
 
       - name: Run Container
         run: |
-          cd x-ui
-          docker run -itd \
-              -p 54321:54321 -p 443:443 -p 80:80 \
-              -e XRAY_VMESS_AEAD_FORCED=false \
-              -v $PWD/db/:/etc/x-ui/ \
-              -v $PWD/cert/:/root/cert/ \
-              --name x-ui --restart=unless-stopped \
-              alireza7/x-ui:latest
+          docker run -d --name x-ui -p 54321:54321 -p 443:443 -p 80:80 alireza0/x-ui
 
-      - name: Verify Container Status
-        run: |
-          docker ps -a | grep x-ui
-          docker logs x-ui --tail 50
-
-      - name: Check Service Readiness
+      - name: Wait for Service to be Ready
         run: |
           for i in {1..10}; do
-            if docker exec x-ui curl -s http://localhost:54321; then
-              echo "X-UI is ready!"
+            if curl -s http://localhost:54321 > /dev/null; then
+              echo "x-ui is up and running!"
               exit 0
+            else
+              echo "Waiting for x-ui to start..."
+              sleep 5
             fi
-            echo "Waiting for X-UI to start... ($i/10)"
-            sleep 10
           done
-          echo "X-UI failed to start!"
+          echo "x-ui did not start in time."
           exit 1
 
-      - name: Display Access Info
+      - name: Verify Installation
         run: |
-          PUBLIC_IP=$(curl -s ifconfig.me)
-          echo "=============================================="
-          echo "X-UI Panel Access: http://$PUBLIC_IP:54321"
-          echo "Default Credentials: admin/admin"
-          echo "=============================================="
+          docker ps -a | grep x-ui
+          curl -s http://localhost:54321
+
+      - name: Print Access Info
+        run: |
+          echo "Panel Access:"
+          echo "http://$(curl -s ifconfig.me):54321"
+
+      - name: Run Python Code
+        run: |
+          cat > loop.py <<'EOF'
+          import time
+
+          start = time.time() + 1000
+
+          while True:
+              if start <= time.time():
+                  break
+              print("Running...")
+              time.sleep(13)
+          EOF
+          python loop.py
