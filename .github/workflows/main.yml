@@ -9,44 +9,36 @@ jobs:
     timeout-minutes: 1000
 
     steps:
-      - name: Checkout Code (Optional)
-        uses: actions/checkout@v4
-
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y curl wget
 
-      - name: Open Firewall Port (54321)
+      - name: Firewall
         run: |
           sudo ufw allow 54321/tcp
           sudo ufw allow 443/tcp
           sudo ufw allow 80/tcp
           sudo ufw reload
 
-      - name: Print Server IP and Port
+      - name: Install (Non-Interactive)
         run: |
-          echo "is running on:"
           echo "IP: $(curl -s ifconfig.me)"
-          echo "Port: 54321"
+          yes | sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" > install.log 2>&1 &
+          sleep 30
 
-      - name: Install x-ui
+      - name: Start and Enable Service
         run: |
-          yes | sudo bash -c "$(curl -v -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" 2>&1 | tee install.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Installation failed!"
-            exit 1
-          fi
-
-      - name: Start Service
-        run: |
+          sudo systemctl daemon-reload
+          sudo systemctl enable x-ui
           sudo systemctl start x-ui
 
-      - name: Check Status
+      - name: Verify Installation
         run: |
-          if systemctl is-active --quiet x-ui; then
-            echo "✅ is running successfully."
-          else
-            echo "❌ failed to start. Check logs for details."
-            exit 1
-          fi
+          sudo systemctl status x-ui --no-pager
+          curl -s http://localhost:54321
+
+      - name: Print Access Info
+        run: |
+          echo "Panel Access:"
+          echo "http://$(curl -s ifconfig.me):54321"
