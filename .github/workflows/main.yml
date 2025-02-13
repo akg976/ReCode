@@ -14,24 +14,37 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl wget
 
-      - name: Firewall
+      - name: Configure Firewall
         run: |
           sudo ufw allow 54321/tcp
           sudo ufw allow 443/tcp
           sudo ufw allow 80/tcp
           sudo ufw reload
 
-      - name: Install (Non-Interactive)
+      - name: Install x-ui (Non-Interactive)
         run: |
-          echo "IP: $(curl -s ifconfig.me)"
-          yes | sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" > install.log 2>&1 &
+          yes | sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" > install.log 2>&1
           sleep 30
 
-      - name: Start and Enable Service
+      - name: Start and Enable x-ui Service
         run: |
           sudo systemctl daemon-reload
           sudo systemctl enable x-ui
           sudo systemctl start x-ui
+
+      - name: Wait for x-ui Service to be Ready
+        run: |
+          for i in {1..10}; do
+            if curl -s http://localhost:54321 > /dev/null; then
+              echo "x-ui is up and running!"
+              exit 0
+            else
+              echo "Waiting for x-ui to start..."
+              sleep 5
+            fi
+          done
+          echo "x-ui did not start in time."
+          exit 1
 
       - name: Verify Installation
         run: |
