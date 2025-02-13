@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  x-ui-setup:
+  setup-code:
     name: Install on Ubuntu
     runs-on: ubuntu-latest
     timeout-minutes: 1000
