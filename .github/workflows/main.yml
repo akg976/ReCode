@@ -24,6 +24,12 @@ jobs:
           sudo ufw allow 80/tcp
           sudo ufw reload
 
+      - name: Print Server IP and Port
+        run: |
+          echo "is running on:"
+          echo "IP: $(curl -s ifconfig.me)"
+          echo "Port: 54321"
+
       - name: Install x-ui
         run: |
           yes | sudo bash -c "$(curl -v -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" 2>&1 | tee install.log
@@ -44,9 +50,3 @@ jobs:
             echo "❌ failed to start. Check logs for details."
             exit 1
           fi
-
-      - name: Print Server IP and Port
-        run: |
-          echo "is running on:"
-          echo "IP: $(curl -s ifconfig.me)"
-          echo "Port: 54321"
