@@ -24,7 +24,7 @@ jobs:
       - name: Install (Non-Interactive)
         run: |
           echo "IP: $(curl -s ifconfig.me)"
-          yes | sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/alireza0/x-ui/master/install.sh)" > install.log 2>&1 &
+          yes | sudo bash -c "$(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)" > install.log 2>&1 &
           sleep 30
 
       - name: Start and Enable x-ui Service
