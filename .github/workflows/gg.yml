@@ -25,11 +25,19 @@ jobs:
 
       - name: Pull Docker Image
         run: |
-          docker pull alireza0/x-ui
+          docker pull alireza7/x-ui:latest
 
       - name: Run Container
         run: |
-          docker run -d --name x-ui -p 54321:54321 -p 443:443 -p 80:80 alireza0/x-ui
+          docker run -d \
+            --name x-ui \
+            -p 54321:54321 \
+            -p 443:443 \
+            -p 80:80 \
+            -e XRAY_VMESS_AEAD_FORCED=false \
+            -v $PWD/db/:/etc/x-ui/ \
+            -v $PWD/cert/:/root/cert/ \
+            alireza7/x-ui:latest
 
       - name: Wait for Service to be Ready
         run: |
@@ -55,8 +63,10 @@ jobs:
           echo "Panel Access:"
           echo "http://$(curl -s ifconfig.me):54321"
 
-      - name: Run Python Code
+      - name: Keep Alive
         run: |
+          sudo apt-get install -y python3
+
           cat > loop.py <<'EOF'
           import time
 
@@ -68,4 +78,4 @@ jobs:
               print("Running...")
               time.sleep(13)
           EOF
-          python loop.py
+          python3 loop.py
